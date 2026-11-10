@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel", "setuptools-scm>=6.2", "hwcomponents"]
+requires = ["setuptools>=70.1", "wheel", "setuptools-scm>=6.2", "hwcomponents"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
 authors = [
-    {name = "Arunkumar Vaidyanathan", email = "kumar.mvarun.arun@gmail.com"}
+    {name = "Arunkumar Vaidyanathan", email = "vaidyanathan@ice.rwth-aachen.de"}
 ]
 keywords = ["accelerator", "hardware", "energy", "estimation", "DSENT", "NoC"]
 classifiers = [

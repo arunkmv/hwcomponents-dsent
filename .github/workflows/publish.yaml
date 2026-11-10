@@ -9,36 +9,6 @@ on:
     types: [created]
 
 jobs:
-  build-wheels:
-    name: Build wheel on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          submodules: recursive
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install build
-      - name: Build wheel
-        env:
-          PYTHONPATH: ${{ github.workspace }}
-        run: |
-          python -m build --wheel
-      - name: Upload wheel
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-${{ matrix.os }}
-          path: dist/*.whl
-
   build-sdist:
     name: Build sdist
     runs-on: ubuntu-latest
@@ -65,6 +35,45 @@ jobs:
         with:
           name: dist-sdist
           path: dist/*.tar.gz
+
+  # The wheel ships a native dsent binary, so each platform needs its own
+  # py3-none-<platform> wheel. Wheels are built from the sdist so the version
+  # comes from its PKG-INFO rather than git (which is unavailable in the
+  # manylinux container). cibuildwheel builds Linux wheels in a manylinux
+  # container and repairs them to a tag PyPI accepts. Platforms without a
+  # wheel fall back to the sdist, which compiles dsent at install time.
+  build-wheels:
+    name: Build wheel on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    needs: build-sdist
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-sdist
+          path: sdist
+      - name: Locate sdist
+        id: sdist
+        shell: bash
+        run: echo "path=$(ls sdist/*.tar.gz)" >> "$GITHUB_OUTPUT"
+      - name: Build wheel
+        uses: pypa/cibuildwheel@v3.4
+        env:
+          CIBW_BUILD: "cp312-manylinux_x86_64 cp312-macosx_*"
+          CIBW_ARCHS_MACOS: native
+          CIBW_TEST_COMMAND: >-
+            python -c "from hwcomponents_dsent import Router;
+            print(Router(tech_node=45e-9, flit_width=64).route_flit())"
+        with:
+          package-dir: ${{ steps.sdist.outputs.path }}
+          output-dir: wheelhouse
+      - name: Upload wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: wheelhouse/*.whl
 
   pypi-publish:
     name: Publish to PyPI

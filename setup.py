@@ -15,8 +15,9 @@ hwcomponents_dir = parent_dir / "hwcomponents"
 if hwcomponents_dir.exists() and str(parent_dir) not in sys.path:
     sys.path.insert(0, str(parent_dir))
 
-from setuptools import setup
+from setuptools import Distribution, setup
 from setuptools.command.build import build
+from setuptools.command.bdist_wheel import bdist_wheel
 import shutil
 import subprocess
 
@@ -47,8 +48,26 @@ class CustomBuildCommand(build):
         super().run()
 
 
+class BinaryDistribution(Distribution):
+    """The package ships a native dsent binary, so install it as platlib."""
+
+    def has_ext_modules(self):
+        return True
+
+
+class PlatformWheelCommand(bdist_wheel):
+    """Tag the wheel py3-none-<platform>: it ships a native dsent binary but no
+    Python extension, so it is platform-specific yet Python-ABI-agnostic."""
+
+    def get_tag(self):
+        _, _, plat = super().get_tag()
+        return "py3", "none", plat
+
+
 setup(
+    distclass=BinaryDistribution,
     cmdclass={
         "build": CustomBuildCommand,
+        "bdist_wheel": PlatformWheelCommand,
     },
 )
