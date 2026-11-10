@@ -19,8 +19,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef __MAP_H__
-#define __MAP_H__
+#ifndef __LIBUTIL_MAP_H__
+#define __LIBUTIL_MAP_H__
 
 #include <iostream>
 #include <map>
@@ -259,5 +259,5 @@ namespace LibUtil
     }
 }
 
-#endif // __MAP_H__
+#endif // __LIBUTIL_MAP_H__
 

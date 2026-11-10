@@ -19,8 +19,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef __MATH_H__
-#define __MATH_H__
+#ifndef __LIBUTIL_MATHUTIL_H__
+#define __LIBUTIL_MATHUTIL_H__
 
 #include <cmath>
 
@@ -38,5 +38,5 @@ namespace LibUtil
     };
 } // namespace LibUtil
 
-#endif // __MATH_H__
+#endif // __LIBUTIL_MATHUTIL_H__
 

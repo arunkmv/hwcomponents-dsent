@@ -19,8 +19,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef __EXCEPTION_H__
-#define __EXCEPTION_H__
+#ifndef __LIBUTIL_EXCEPTION_H__
+#define __LIBUTIL_EXCEPTION_H__
 
 #include <exception>
 
@@ -46,5 +46,5 @@ namespace LibUtil
     };
 }
 
-#endif // __EXCEPTION_H__
+#endif // __LIBUTIL_EXCEPTION_H__
 

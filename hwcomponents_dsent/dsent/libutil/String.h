@@ -19,8 +19,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef __STRING_H__
-#define __STRING_H__
+#ifndef __LIBUTIL_STRING_H__
+#define __LIBUTIL_STRING_H__
 
 #include <string>
 #include <cstdarg>
@@ -235,5 +235,5 @@ namespace LibUtil
     std::istream& safeGetline(std::istream& is_, String& str_);
 } // namespace LibUtil
 
-#endif // __STRING_H__
+#endif // __LIBUTIL_STRING_H__
 

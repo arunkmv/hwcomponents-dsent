@@ -19,8 +19,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef __ASSERT_H__
-#define __ASSERT_H__
+#ifndef __LIBUTIL_ASSERT_H__
+#define __LIBUTIL_ASSERT_H__
 
 #include "String.h"
 #include "Exception.h"
@@ -39,5 +39,5 @@
     } while(0);
 #endif
 
-#endif // __ASSERT_H__
+#endif // __LIBUTIL_ASSERT_H__
 

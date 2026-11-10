@@ -19,8 +19,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef __LOG_H__
-#define __LOG_H__
+#ifndef __LIBUTIL_LOG_H__
+#define __LIBUTIL_LOG_H__
 
 #include <cstdio>
 #include <iostream>
@@ -60,5 +60,5 @@ namespace LibUtil
     };
 }
 
-#endif // __LOG_H__
+#endif // __LIBUTIL_LOG_H__
 
