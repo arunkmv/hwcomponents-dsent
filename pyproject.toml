@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "setuptools-scm>=6.2", "hwcomponents"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hwcomponents_dsent"
+dynamic = ["version"]
+description = "A package for estimating the energy and area of on-chip network routers and links with DSENT"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [
+    {name = "Arunkumar Vaidyanathan", email = "kumar.mvarun.arun@gmail.com"}
+]
+keywords = ["accelerator", "hardware", "energy", "estimation", "DSENT", "NoC"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+]
+dependencies = [
+    "hwcomponents",
+]
+
+[tool.setuptools]
+packages = {find = {}}
+include-package-data = true
+
+[tool.setuptools.package-data]
+hwcomponents_dsent = [
+    "dsent/**/*",
+]
+
+[tool.setuptools_scm]
+write_to = "hwcomponents_dsent/_version.py"
+fallback_version = "1.0"
+version_scheme = "hwcomponents._version_scheme:post_version"
+local_scheme = "hwcomponents._version_scheme:no_local"
