@@ -1,7 +1,8 @@
 # HWComponents-DSENT
 
 This package connects [DSENT](https://github.com/gem5/gem5/tree/stable/ext/dsent) to HWComponents. 
-It provides models for electrical network-on-chip routers and links.
+It provides models for electrical network-on-chip routers and links, and bufferless
+crossbar switches such as buses.
 
 These models are for use with the HWComponents package, found at
 https://accelergy-project.github.io/hwcomponents/.
@@ -13,7 +14,7 @@ make build      # compile the standalone DSENT executable
 pip install .
 
 # Check that the installation is successful
-hwc --list | grep -iE 'router|link'
+hwc --list | grep -iE 'router|link|crossbar'
 ```
 
 ## Models
@@ -23,14 +24,23 @@ hwc --list | grep -iE 'router|link'
   `write_buffer`, `read_buffer`, `arbitrate`, `traverse_crossbar`. Clock-tree power is
   activity-independent and is included in `leak_power`.
 - `NoCLink`: repeated-wire link. Action: `send`.
+- `Crossbar`: bufferless multiplexer crossbar with a matrix arbiter per output, e.g. a
+  bus. Actions: `traverse` (a word from an input to an output) and `arbitrate` (an
+  output granted to an input, once per transfer; zero with a single input). A shared bus
+  is a crossbar with one output (`n_outputs=1`, the default); a crossbar with dedicated
+  connections has one per endpoint. Wires to and from the switch are not included:
+  add a `NoCLink` of their length.
 
 ```python
-from hwcomponents_dsent import Router, NoCLink
+from hwcomponents_dsent import Crossbar, NoCLink, Router
 
 router = Router(tech_node=22e-9, flit_width=64, n_in_ports=5, n_out_ports=5)
 link = NoCLink(tech_node=22e-9, width=64, length=1e-3)
 print(router.route_flit(), router.leak_power, router.area)
 print(link.send(), link.leak_power, link.area)
+
+bus = Crossbar(tech_node=22e-9, width=64, n_inputs=6)  # shared bus of 6 endpoints
+print(bus.traverse(), bus.arbitrate(), bus.leak_power, bus.area)
 ```
 
 DSENT ships 22, 32, and 45nm bulk technology models. Other nodes are linearly

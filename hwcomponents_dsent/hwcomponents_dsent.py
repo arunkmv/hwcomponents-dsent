@@ -337,6 +337,141 @@ class Router(ComponentModel):
         return self._cost(self.crossbar_energy, self.n_out_ports)
 
 
+class Crossbar(ComponentModel):
+    """
+    Electrical bufferless crossbar switch modeled with DSENT, e.g. a bus.
+
+    A multiplexer crossbar with a matrix arbiter per output, granting it to one of the
+    inputs. Unlike a `Router`, it neither buffers nor pipelines words: they pass from
+    an input to an output within a cycle. A shared bus is a crossbar with one output
+    (an `n_inputs`:1 multiplexer); a crossbar with dedicated connections has an output
+    per endpoint. Wires to and from the switch are not included; model them with a
+    `NoCLink` of their length.
+
+    Parameters
+    ----------
+        tech_node: The technology node in meters. DSENT supports 22, 32, and 45nm bulk
+            directly; other nodes are interpolated or extrapolated.
+        width: The number of bits switched in parallel.
+        n_inputs: The number of input ports.
+        n_outputs: The number of output ports.
+        frequency: The clock frequency in Hz. DSENT sizes gates to meet this frequency.
+        include_11nm_trigate: Also use DSENT's 11nm tri-gate model as an interpolation
+            point. By default only bulk planar models are used.
+
+    Attributes
+    ----------
+        component_name: set to ["Crossbar", "crossbar", "CrossbarSwitch"]
+        priority: set to 0.3
+    """
+
+    component_name = ["Crossbar", "crossbar", "CrossbarSwitch"]
+    priority = 0.3
+
+    def __init__(
+        self,
+        tech_node: float,
+        width: int,
+        n_inputs: int,
+        n_outputs: int = 1,
+        frequency: float = 1e9,
+        include_11nm_trigate: bool = False,
+    ):
+        self.tech_node = float(tech_node) * 1e9  # m -> nm
+        self.width = self.assert_int("width", width)
+        self.n_inputs = self.assert_int("n_inputs", n_inputs)
+        self.n_outputs = self.assert_int("n_outputs", n_outputs)
+        self.frequency = float(frequency)
+
+        r = _interp_tech_node(
+            self.logger, self.tech_node, self._call_dsent, include_11nm_trigate
+        )
+        self.traverse_energy = r["traverse"]
+        self.arbitrate_energy = r["arbitrate"]
+        for k, v in r.items():
+            self.logger.info(f"DSENT returned {k} {v}")
+
+        arbiters = self.n_outputs if self.n_inputs > 1 else 0
+        super().__init__(
+            area=r["area_crossbar"] + arbiters * r["area_arbiter"],
+            leak_power=r["leak_crossbar"] + arbiters * r["leak_arbiter"],
+        )
+
+    def _call_dsent(self, tech_model_path: str) -> Dict[str, float]:
+        timing = {
+            "ElectricalTechModelFilename": tech_model_path,
+            "IsPerformTimingOptimization": "true",
+            "TimingOptimization->StartNetNames": "[*]",
+            "Frequency": self.frequency,
+        }
+        crossbar = _call_dsent(
+            self.logger,
+            {
+                "ModelName": "MultiplexerCrossbar",
+                **timing,
+                "NumberInputs": self.n_inputs,
+                "NumberOutputs": self.n_outputs,
+                "NumberBits": self.width,
+            },
+            {
+                "traverse": "$(Energy>>MultiplexerCrossbar:Multicast1)",
+                "leak_crossbar": "$(NddPower>>MultiplexerCrossbar:Leakage)",
+                "area_crossbar": "$(Area>>MultiplexerCrossbar:Active)",
+            },
+        )
+        # A single input needs no arbitration.
+        if self.n_inputs == 1:
+            none = {"arbitrate": 0.0, "leak_arbiter": 0.0, "area_arbiter": 0.0}
+            return crossbar | none
+        arbiter = _call_dsent(
+            self.logger,
+            {"ModelName": "MatrixArbiter", **timing, "NumberRequests": self.n_inputs},
+            {
+                "arbitrate": "$(Energy>>MatrixArbiter:Arbitrate)",
+                "leak_arbiter": "$(NddPower>>MatrixArbiter:Leakage)",
+                "area_arbiter": "$(Area>>MatrixArbiter:Active)",
+            },
+        )
+        return crossbar | arbiter
+
+    @action(bits_per_action="width")
+    def traverse(self) -> ActionCost:
+        """
+        Returns the energy, throughput, and latency to switch one `width`-bit word from
+        an input to an output.
+
+        Parameters
+        ----------
+        bits_per_action : int
+            The number of bits to switch.
+
+        Returns
+        -------
+            ActionCost: energy (Joules), throughput (words/second), latency (seconds).
+        """
+        return ActionCost(
+            energy=self.traverse_energy,
+            throughput=self.frequency * self.n_outputs,
+            latency=1 / self.frequency,
+        )
+
+    @action
+    def arbitrate(self) -> ActionCost:
+        """
+        Returns the energy, throughput, and latency to grant an output to an input, once
+        per transfer of any number of words. Zero with a single input.
+
+        Returns
+        -------
+            ActionCost: energy (Joules), throughput (grants/second), latency (seconds).
+        """
+        return ActionCost(
+            energy=self.arbitrate_energy,
+            throughput=self.frequency * self.n_outputs,
+            latency=1 / self.frequency,
+        )
+
+
 class NoCLink(ComponentModel):
     """
     Electrical repeated-wire NoC link modeled with DSENT.

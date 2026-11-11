@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "hwcomponents_dsent"
 dynamic = ["version"]
-description = "A package for estimating the energy and area of on-chip network routers and links with DSENT"
+description = "A package for estimating the energy and area of on-chip network routers, links and crossbars with DSENT"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
